@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhisperWave | Ultimate Lab</title>
+    <meta property="og:title" content="WhisperWave | Ultimate Lab">
+    <meta property="og:description" content="Envoie-moi des messages anonymes sur WhisperWave ! 🤫">
+    <meta property="og:image" content="https://api.dicebear.com/7.x/avataaars/svg?seed=WhisperWave">
+    <meta property="og:url" content="https://yourdomain.com/index.html">
+    <meta property="og:type" content="website">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* VARIABLES CSS ADAPTATIVES */
+        :root { 
+            --primary: #ff3e60; 
+            --bg: #0b0b0b; 
+            --card: #1c1c1e; 
+            --text: #ffffff; 
+            --text-dim: rgba(255,255,255,0.4);
+            --accent: #00ff88; 
+            --shadow: 0 10px 40px rgba(0,0,0,0.6); 
+            --input-bg: #2c2c2e;
+            --border: rgba(255,255,255,0.05);
+        }
+
+        /* MODE CLAIR */
+        body.light-mode {
+            --bg: #f2f2f7;
+            --card: #ffffff;
+            --text: #1c1c1e;
+            --text-dim: rgba(0,0,0,0.5);
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --input-bg: #e5e5ea;
+            --border: rgba(0,0,0,0.05);
+        }
+
+        /* THEMES DE COULEURS ACCENTUÉES - SYNC AMÉLIORÉE */
+        body.theme-royal { --primary: #7000ff; }
+        body.theme-sunset { --primary: #ff8c00; }
+        body.theme-emerald { --primary: #00c853; }
+        
+        body.theme-royal:not(.light-mode) { --bg: #0d011a; }
+        body.theme-sunset:not(.light-mode) { --bg: #1a0f00; }
+        body.theme-emerald:not(.light-mode) { --bg: #001207; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, color 0.3s, transform 0.2s; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        
+        /* LOADER */
+        #main-loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 3px solid rgba(128,128,128,0.2); border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s infinite linear; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .container { width: 100%; max-width: 420px; margin: auto; padding: 20px; padding-bottom: 100px; }
+        .hidden { display: none !important; }
+
+        /* CARDS & BUTTONS */
+        .ngl-card { background: var(--card); border-radius: 30px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
+        .btn-ngl { width: 100%; padding: 18px; border-radius: 22px; border: none; font-weight: 800; cursor: pointer; background: var(--primary); color: white; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .btn-ngl:active { transform: scale(0.97); }
+
+        /* DOUBLE BUTTON DELIRIUM STYLE */
+        .delirium-group { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 30px; }
+        .btn-delirium { background: var(--primary); color: white; border-radius: 20px; border: none; font-weight: 800; padding: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; text-transform: uppercase; }
+        .btn-delirium.outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+        /* HEADER ACCUEIL */
+        .home-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
+        .profile-pill { display: flex; align-items: center; gap: 12px; background: var(--card); padding: 8px 15px; border-radius: 50px; border: 1px solid var(--border); }
+        .settings-circle { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background: var(--card); border-radius: 50%; cursor: pointer; border: 1px solid var(--border); }
+
+        /* SOCIAL SHARE */
+        .share-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+        .share-btn { height: 50px; border-radius: 18px; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; cursor: pointer; }
+        .wa { background: #25D366; } .fb { background: #1877F2; } .sn { background: #FFFC00; color: #000; }
+
+        /* ZONE HISTORIQUE */
+        .history-section { margin-top: 30px; }
+        .history-label { font-size: 11px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; padding-left: 10px; }
+        .msg-bubble { background: var(--card); padding: 20px; border-radius: 25px; margin-bottom: 12px; position: relative; border: 1px solid var(--border); }
+        
+        /* OVERLAYS */
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; transform: translateY(100%); padding: 30px; overflow-y: auto; }
+        .overlay.active { transform: translateY(0); }
+
+        .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .theme-dot { height: 45px; border-radius: 12px; cursor: pointer; border: 3px solid transparent; }
+        .theme-dot.active { border-color: var(--text); }
+
+        input, textarea, select { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--input-bg); color: var(--text); font-size: 15px; margin-top: 8px; outline: none; }
+        
+        #capture-zone { position: absolute; left: -9999px; width: 450px; padding: 60px; text-align: center; color: white; }
+
+        .switch-container { display: flex; align-items: center; justify-content: space-between; padding: 10px 5px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+    </style>
+</head>
+<body id="main-body">
+
+<div id="main-loader">
+    <div class="spinner"></div>
+    <p style="margin-top:20px; font-weight:800; font-size:10px; letter-spacing:3px; opacity:0.5;">ANONY'X DEV BURKINA</p>
+</div>
+
+<div class="container">
+    
+    <div id="view-inbox" class="hidden">
+        <div class="home-header">
+            <div class="profile-pill">
+                <img id="my-avatar" src="" style="width:32px; height:32px; border-radius:50%; background: #000;">
+                <span id="my-username-display" style="font-weight:800; font-size:14px;"></span>
+            </div>
+            <div class="settings-circle" onclick="toggleOverlay('settings-panel', true)">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+        </div>
+
+        <div class="ngl-card">
+            <h3 style="font-size:18px; font-weight:800; margin-bottom:5px;">Ton lien personnel</h3>
+            <p style="font-size:12px; opacity:0.5; margin-bottom:20px;">Partage-le pour recevoir des secrets</p>
+            <button class="btn-ngl" style="background:var(--text); color:var(--bg);" onclick="copyLink()">COPIER LE LIEN 🔗</button>
+            <div class="share-row">
+                <button class="share-btn wa" onclick="shareTo('whatsapp')"><i class="fab fa-whatsapp"></i></button>
+                <button class="share-btn fb" onclick="shareTo('facebook')"><i class="fab fa-facebook-f"></i></button>
+                <button class="share-btn sn" onclick="shareTo('snapchat')"><i class="fab fa-snapchat-ghost"></i></button>
+            </div>
+        </div>
+
+        <div class="delirium-group">
+            <button class="btn-delirium" onclick="switchView('random')">
+                <i class="fas fa-dice"></i> DÉLIRIUM CHAT
+            </button>
+            <button class="btn-delirium outline" onclick="alert('Bientôt disponible !')">
+                <i class="fas fa-bolt"></i> FLASH
+            </button>
+        </div>
+
+        <div class="history-section">
+            <div class="history-label">Boîte de réception</div>
+            <div id="msg-container"></div>
+        </div>
+    </div>
+
+    <div id="view-send" class="hidden">
+        <div class="ngl-card" style="background:white; color:black; text-align:center; padding-top:40px;">
+            <img id="t-avatar" src="" style="width:80px; height:80px; border-radius:50%; border:4px solid white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom:15px;">
+            <div style="font-weight:900; font-size:20px; margin-bottom:20px;">@<span id="t-username"></span></div>
+            <select id="msg-mood" style="background:#f2f2f7; color:black; font-weight:700;">
+                <option value="gentil">😇 Message Gentil</option>
+                <option value="drole">😂 Message Drôle</option>
+                <option value="audacieux">🔥 Message Audacieux</option>
+            </select>
+            <textarea id="msg-text" placeholder="Écris ton message anonyme..." style="background:#f2f2f7; color:black; height:150px; text-align:center;"></textarea>
+            <button class="btn-ngl" style="background:black;" onclick="sendMsg()">ENVOYER 🚀</button>
+        </div>
+    </div>
+
+    <div id="view-random" class="hidden">
+        <div class="ngl-card" style="text-align:center; border:2px solid var(--primary);">
+            <h2 style="color:var(--primary); margin-bottom:10px;">Délirium Mode</h2>
+            <p style="font-size:12px; opacity:0.6; margin-bottom:20px;">Ton message sera envoyé à un utilisateur au hasard.</p>
+            <textarea id="random-msg-text" placeholder="Le destinataire sera une surprise..."></textarea>
+            <button class="btn-ngl" style="background:var(--primary); color:white; margin-top:15px;" onclick="sendRandomMsg()">LANCER LE SECRET</button>
+            <p onclick="switchView('inbox')" style="margin-top:20px; font-size:12px; cursor:pointer; opacity:0.5;">RETOUR</p>
+        </div>
+    </div>
+
+    <div id="view-login" class="hidden">
+        <div class="ngl-card" style="text-align:center;">
+            <h2 style="margin-bottom:25px;">Lab Access</h2>
+            <input type="email" id="l-email" placeholder="Email">
+            <input type="password" id="l-pass" placeholder="Mot de passe">
+            <button class="btn-ngl" onclick="login()">CONNEXION</button>
+            <p onclick="switchView('register')" style="margin-top:20px; font-size:12px; cursor:pointer;">Créer un profil testeur</p>
+        </div>
+    </div>
+    <div id="view-register" class="hidden">
+        <div class="ngl-card">
+            <h2 style="text-align:center; margin-bottom:15px;">Nouveau Profil</h2>
+            <div id="avatar-grid" style="display:grid; grid-template-columns: repeat(4,1fr); gap:10px; margin-bottom:20px;"></div>
+            <input type="text" id="r-user" placeholder="Username">
+            <input type="email" id="r-email" placeholder="Email">
+            <input type="password" id="r-pass" placeholder="Mot de passe">
+            <button class="btn-ngl" onclick="register()">CRÉER MON ACCÈS</button>
+        </div>
+    </div>
+</div>
+
+<div id="settings-panel" class="overlay">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+        <h2 style="font-weight:900;">Lab Settings</h2>
+        <i class="fas fa-times fa-lg" onclick="toggleOverlay('settings-panel', false)"></i>
+    </div>
+    <div style="color:var(--text-dim); font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px; padding-left:10px;">Apparence</div>
+    <div class="ngl-card" style="padding:15px;">
+        <div class="switch-container">
+            <p style="font-size:13px; font-weight:700;">Mode Sombre</p>
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle" checked onchange="toggleDarkMode(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <hr style="opacity:0.1; margin:15px 0;">
+        <p style="font-size:13px; font-weight:700; margin-bottom:10px;">Thème visuel</p>
+        <div class="theme-grid">
+            <div class="theme-dot" onclick="setTheme('default', this)" style="background:#ff3e60;"></div>
+            <div class="theme-dot" onclick="setTheme('royal', this)" style="background:#7000ff;"></div>
+            <div class="theme-dot" onclick="setTheme('sunset', this)" style="background:#ff8c00;"></div>
+            <div class="theme-dot" onclick="setTheme('emerald', this)" style="background:#00c853;"></div>
+        </div>
+    </div>
+    <div style="color:var(--text-dim); font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px; padding-left:10px;">À Propos du Lab</div>
+    <div class="ngl-card" style="padding:20px;">
+        <p style="font-weight:800; color:var(--primary); font-size:12px; margin-bottom:5px;">MISSION</p>
+        <p style="font-size:12px; line-height:1.5; opacity:0.8; margin-bottom:15px;">WhisperWave est un laboratoire d'expérimentation sur l'anonymat numérique et la sécurité des données.</p>
+        <p style="font-weight:800; color:var(--accent); font-size:12px; margin-bottom:5px;">CRÉATEUR</p>
+        <p style="font-size:12px; opacity:0.8;">Développé avec passion par <strong>Anony'X Dev Burkina</strong>.</p>
+    </div>
+    <div style="color:var(--text-dim); font-size:11px; font-weight:800; text-transform:uppercase; margin-bottom:10px; padding-left:10px;">Actions</div>
+    <button class="btn-ngl" style="background:#ff4444; margin-bottom:12px; padding:12px; font-size:12px;" onclick="deleteAllMessages()">EFFACER L'HISTORIQUE</button>
+    <button class="btn-ngl" style="background:#333; color:white; padding:12px; font-size:12px;" onclick="logout()">DÉCONNEXION</button>
+</div>
+
+<div id="capture-zone">
+    <div style="font-size:14px; border-bottom:2px solid white; padding-bottom:15px; margin-bottom:30px; font-weight:800; letter-spacing:4px;">WHISPERWAVE LAB</div>
+    <h2 id="capture-text" style="font-size:36px; line-height:1.2; font-weight:800;"></h2>
+    <div style="margin-top:60px; font-size:14px; font-weight:700;">PROJET PAR ANONY'X DEV BURKINA</div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, set, get, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const config = {
+        apiKey: "AIzaSyApUxzvh01rLFkELxI65dKpBE6uEaRBrIQ",
+        authDomain: "moneyfusion-epargne.firebaseapp.com",
+        databaseURL: "https://moneyfusion-epargne-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "moneyfusion-epargne",
+        storageBucket: "moneyfusion-epargne.firebasestorage.app",
+        messagingSenderId: "973553072578",
+        appId: "1:973553072578:web:7c0a31b4b6dc3f6ffb3e5b"
+    };
+
+    const app = initializeApp(config);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let selectedAvatar = "Willow";
+    const seeds = ["Willow", "Aria", "Finn", "Milo", "Luna", "Zoe", "Felix", "Jasper"];
+
+    window.onload = () => { setTimeout(() => { document.getElementById('main-loader').style.display = 'none'; }, 1500); };
+
+    window.toggleOverlay = (id, s) => document.getElementById(id).classList.toggle('active', s);
+    window.switchView = (v) => {
+        document.querySelectorAll('.container > div').forEach(el => el.classList.add('hidden'));
+        document.getElementById('view-' + v).classList.remove('hidden');
+    };
+
+    window.toggleDarkMode = (isDark) => {
+        if(isDark) {
+            document.body.classList.remove('light-mode');
+            localStorage.setItem('ww-dark-mode', 'true');
+        } else {
+            document.body.classList.add('light-mode');
+            localStorage.setItem('ww-dark-mode', 'false');
+        }
+    };
+
+    onAuthStateChanged(auth, user => {
+        const uId = new URLSearchParams(window.location.search).get('u');
+        if(uId) {
+            switchView('send');
+            get(ref(db, `users/${uId}`)).then(s => {
+                if(s.exists()){
+                    document.getElementById('t-username').textContent = s.val().username;
+                    document.getElementById('t-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.val().avatar}`;
+                }
+            });
+        } else if (user) {
+            get(ref(db, `users/${user.uid}`)).then(s => {
+                switchView('inbox');
+                document.getElementById('my-username-display').textContent = "@" + s.val().username;
+                document.getElementById('my-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.val().avatar}`;
+                loadInbox(user.uid);
+            });
+        } else { switchView('login'); }
+    });
+
+    const grid = document.getElementById('avatar-grid');
+    seeds.forEach(s => {
+        const img = document.createElement('img');
+        img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${s}`;
+        img.style = "width:100%; border-radius:50%; cursor:pointer; background:#222; padding:5px;";
+        img.onclick = () => {
+            Array.from(grid.children).forEach(c => c.style.border = "none");
+            img.style.border = "2px solid var(--primary)";
+            selectedAvatar = s;
+        };
+        grid.appendChild(img);
+    });
+
+    function loadInbox(uid) {
+        onValue(ref(db, `ngl_messages/${uid}`), snap => {
+            const cont = document.getElementById('msg-container'); cont.innerHTML = "";
+            if(!snap.exists()) { cont.innerHTML = `<p style='text-align:center; opacity:0.3; padding:40px; font-size:12px;'>Aucun message</p>`; return; }
+            snap.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "msg-bubble";
+                div.innerHTML = `
+                    <p style="font-weight:700; margin-bottom:15px; font-size:15px; line-height:1.4;">${m.val().text}</p>
+                    <button class="btn-ngl" style="padding:10px; font-size:11px; background:var(--input-bg); color:var(--text)" onclick="downloadMsg('${m.val().text.replace(/'/g, "\\'")}')">CAPTURE 📸</button>
+                `;
+                cont.prepend(div);
+            });
+        });
+    }
+
+    window.sendMsg = () => {
+        const t = document.getElementById('msg-text').value;
+        const uId = new URLSearchParams(window.location.search).get('u');
+        if(!t) return;
+        push(ref(db, `ngl_messages/${uId}`), { text: t, time: Date.now() }).then(() => {
+            alert("Secret envoyé avec succès !");
+            window.location.href = "index.html";
+        });
+    };
+
+    window.sendRandomMsg = () => {
+        const text = document.getElementById('random-msg-text').value;
+        if(!text) return;
+        get(ref(db, `users`)).then(snap => {
+            const users = []; snap.forEach(u => { if(u.key !== auth.currentUser.uid) users.push(u.key); });
+            const luckyOne = users[Math.floor(Math.random() * users.length)];
+            push(ref(db, `ngl_messages/${luckyOne}`), { text: "[🎲] " + text, time: Date.now() });
+            alert("Ton message a été propulsé vers un inconnu !");
+            switchView('inbox');
+        });
+    };
+
+    window.deleteAllMessages = () => {
+        if(confirm("Vider définitivement ton historique ?")) {
+            remove(ref(db, `ngl_messages/${auth.currentUser.uid}`));
+            toggleOverlay('settings-panel', false);
+        }
+    };
+
+    window.copyLink = () => {
+        const l = window.location.origin + window.location.pathname + "?u=" + auth.currentUser.uid;
+        navigator.clipboard.writeText(l); alert("Lien copié dans le presse-papier !");
+    };
+
+    window.shareTo = (p) => {
+        const link = window.location.origin + window.location.pathname + "?u=" + auth.currentUser.uid;
+        const text = encodeURIComponent("Envoie-moi des messages anonymes sur WhisperWave ! 🤫\n" + link);
+        if(p === 'whatsapp') window.open(`https://wa.me/?text=${text}`);
+        if(p === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
+        if(p === 'snapchat') { navigator.clipboard.writeText(link); alert("Lien copié pour Snapchat !"); }
+    };
+
+    window.downloadMsg = (text) => {
+        const zone = document.getElementById('capture-zone');
+        document.getElementById('capture-text').textContent = text;
+        zone.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--primary');
+        html2canvas(zone).then(canvas => {
+            const link = document.createElement('a');
+            link.download = "WhisperSecret.png";
+            link.href = canvas.toDataURL(); link.click();
+        });
+    };
+
+    window.setTheme = (t, el) => {
+        document.body.classList.remove('theme-royal', 'theme-sunset', 'theme-emerald');
+        if(t !== 'default') document.body.classList.add('theme-' + t);
+        document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        localStorage.setItem('ww-theme', t);
+    };
+
+    window.login = () => { signInWithEmailAndPassword(auth, document.getElementById('l-email').value, document.getElementById('l-pass').value).catch(() => alert("Erreur de connexion")); };
+    window.register = () => {
+        const u = document.getElementById('r-user').value;
+        createUserWithEmailAndPassword(auth, document.getElementById('r-email').value, document.getElementById('r-pass').value).then(r => {
+            set(ref(db, `users/${r.user.uid}`), { username: u, avatar: selectedAvatar, uid: r.user.uid });
+        });
+    };
+    window.logout = () => signOut(auth).then(() => location.reload());
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('ww-theme') || 'default';
+        const isDarkMode = localStorage.getItem('ww-dark-mode') !== 'false';
+        document.getElementById('dark-mode-toggle').checked = isDarkMode;
+        toggleDarkMode(isDarkMode);
+        if(savedTheme !== 'default') document.body.classList.add('theme-' + savedTheme);
+        setTimeout(() => {
+            const dots = document.querySelectorAll('.theme-dot');
+            dots.forEach(dot => {
+                const bg = dot.style.backgroundColor;
+                if(savedTheme === 'default' && (bg.includes('255, 62, 96') || bg === '#ff3e60')) dot.classList.add('active');
+                if(savedTheme === 'royal' && (bg.includes('112, 0, 255') || bg === '#7000ff')) dot.classList.add('active');
+                if(savedTheme === 'sunset' && (bg.includes('255, 140, 0') || bg === '#ff8c00')) dot.classList.add('active');
+                if(savedTheme === 'emerald' && (bg.includes('0, 200, 83') || bg === '#00c853')) dot.classList.add('active');
+            });
+        }, 200);
+    });
+</script>
+</body>
+</html>
